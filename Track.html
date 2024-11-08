@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Comparativo IA</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #7c3aed;
+            --background: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        select {
+            padding: 0.5rem;
+            border: 2px solid var(--primary);
+            border-radius: 0.5rem;
+            background: var(--card);
+            color: var(--text);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:hover {
+            border-color: var(--secondary);
+        }
+
+        .comparison-card {
+            background: var(--card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .comparison-title {
+            font-size: 1.2rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+
+        .comparison-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .column {
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 0.5rem;
+        }
+
+        .column-title {
+            font-weight: bold;
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .item-list {
+            list-style-type: none;
+        }
+
+        .item-list li {
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+            border-left: 2px solid var(--secondary);
+        }
+
+        @media (max-width: 768px) {
+            .comparison-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            font-style: italic;
+            color: var(--secondary);
+        }
+
+        .error {
+            color: #dc2626;
+            text-align: center;
+            padding: 1rem;
+            background: #fee2e2;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Análisis Comparativo: Carrera Tradicional vs IA</h1>
+        
+        <div class="controls">
+            <select id="aspectSelector">
+                <option value="todos">Todos los aspectos</option>
+            </select>
+        </div>
+
+        <div id="comparativeContent"></div>
+    </div>
+
+    <script>
+        const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/matriz-comparativa.json';
+        
+        async function fetchData() {
+            try {
+                const response = await fetch(GITHUB_RAW_URL);
+                if (!response.ok) throw new Error('Error al cargar los datos');
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                showError('No se pudieron cargar los datos. Por favor, intente más tarde.');
+            }
+        }
+
+        function showError(message) {
+            const content = document.getElementById('comparativeContent');
+            content.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        function showLoading() {
+            const content = document.getElementById('comparativeContent');
+            content.innerHTML = '<div class="loading">Cargando datos...</div>';
+        }
+
+        function createComparisonCard(aspect) {
+            return `
+                <div class="comparison-card">
+                    <h2 class="comparison-title">${aspect.aspecto}</h2>
+                    <div class="comparison-content">
+                        <div class="column">
+                            <div class="column-title">Profesión Tradicional</div>
+                            <ul class="item-list">
+                                ${aspect.profesion_tradicional.map(item => `<li>${item}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <div class="column-title">Propósito Especializado con IA</div>
+                            <ul class="item-list">
+                                ${aspect.proposito_especializado_ia.map(item => `<li>${item}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function populateSelector(data) {
+            const selector = document.getElementById('aspectSelector');
+            data.aspectos_comparativos.forEach(aspect => {
+                const option = document.createElement('option');
+                option.value = aspect.aspecto;
+                option.textContent = aspect.aspecto;
+                selector.appendChild(option);
+            });
+        }
+
+        function updateContent(data, selectedAspect) {
+            const content = document.getElementById('comparativeContent');
+            const aspects = data.aspectos_comparativos;
+            
+            if (selectedAspect === 'todos') {
+                content.innerHTML = aspects.map(aspect => createComparisonCard(aspect)).join('');
+            } else {
+                const filteredAspect = aspects.find(aspect => aspect.aspecto === selectedAspect);
+                if (filteredAspect) {
+                    content.innerHTML = createComparisonCard(filteredAspect);
+                }
+            }
+        }
+
+        async function initializeApp() {
+            showLoading();
+            const data = await fetchData();
+            if (data) {
+                populateSelector(data);
+                
+                const selector = document.getElementById('aspectSelector');
+                selector.addEventListener('change', (e) => {
+                    updateContent(data, e.target.value);
+                });
+                
+                updateContent(data, 'todos');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>
